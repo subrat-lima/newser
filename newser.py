@@ -15,18 +15,29 @@ def get_html(url: str):
 class OdishaTVHeadlinesPage:
     def __init__(self, html: str):
         self.tree = HTMLParser(html)
+        self.previous_date = datetime.now().strftime("%A, %d %B %Y")
 
     def parse_page(self):
         articles = self.tree.css(".listing-result-news")
         return [self.parse_headline(article) for article in articles]
 
     def parse_headline(self, article):
-        date = article.css_first(".listing-result-news-subcontent > ul > li").text()
+        title = article.css_first("h5").text()
+        if "Latest Odisha Breaking News Updates" in title:
+            date = title.split("-")[1].strip()
+        else:
+            try:
+                date = article.css_first(
+                    ".listing-result-news-subcontent > ul > li"
+                ).text()
+            except:
+                date = self.previous_date
+        self.previous_date = date
         date = datetime.strptime(date, "%A, %d %B %Y").strftime("%s")
         return {
             "url": article.css_first("a").attributes.get("href"),
             "date": date,
-            "title": article.css_first("h5").text(),
+            "title": title,
         }
 
     @property
@@ -44,8 +55,7 @@ def convert_json_to_sfeed(json_data):
     return sfeed_data
 
 
-def fetch_news(output="sfeed"):
-    url = "https://odishatv.in/weather"
+def fetch_news(url, output="sfeed"):
     try:
         html = get_html(url)
     except:
@@ -64,7 +74,8 @@ def fetch_news(output="sfeed"):
 
 
 def main():
-    news = fetch_news()
+    url = "https://odishatv.in/odisha"
+    news = fetch_news(url)
     print(news)
 
 
