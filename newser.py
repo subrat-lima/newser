@@ -48,9 +48,9 @@ def fetch_news(output="sfeed"):
     url = "https://odishatv.in/weather"
     try:
         html = get_html(url)
-        print(f"html: {html}")
     except:
-        print("error fetching html")
+        print("error fetching html, please try after sometime")
+        return -1
     else:
         otv = OdishaTVHeadlinesPage(html)
         json_data = otv.parse_page()
@@ -60,6 +60,7 @@ def fetch_news(output="sfeed"):
             sfeed_data = convert_json_to_sfeed(json_data)
             return sfeed_data
     print("invalid format selected")
+    return -2
 
 
 def main():
