@@ -1,7 +1,23 @@
+import os
 import httpx
+import argparse
 
 from datetime import datetime
 from selectolax.parser import HTMLParser
+
+
+def get_options():
+    parser = argparse.ArgumentParser(description="options to configure newser")
+    parser.add_argument("--format", help="selects the output format[json|sfeed]")
+    parser.add_argument("--output", help="name of the output file to be saved")
+    parser.add_argument("url", help="url of the news page to extract data")
+    args = parser.parse_args()
+    options = {"url": args.url, "format": "sfeed"}
+    if args.format is not None:
+        options["format"] = args.format
+    if args.output is not None:
+        options["output"] = args.output
+    return options
 
 
 def get_html(url: str):
@@ -55,28 +71,31 @@ def convert_json_to_sfeed(json_data):
     return sfeed_data
 
 
-def fetch_news(url, output="sfeed"):
+def fetch_news(url, output_type="sfeed"):
     try:
         html = get_html(url)
     except:
-        print("error fetching html, please try after sometime")
-        return -1
+        return 'error: could not fetch html'
     else:
         otv = OdishaTVHeadlinesPage(html)
         json_data = otv.parse_page()
-        if output == "json":
+        if output_type == "json":
             return json_data
-        elif output == "sfeed":
+        elif output_type == "sfeed":
             sfeed_data = convert_json_to_sfeed(json_data)
             return sfeed_data
-    print("invalid format selected")
-    return -2
+    return 'error: invalid output format'
 
 
 def main():
-    url = "https://odishatv.in/odisha"
-    news = fetch_news(url)
-    print(news)
+    # url = "https://odishatv.in/odisha"
+    options = get_options()
+    news = fetch_news(options["url"], options["format"])
+    if "output" in options:
+        with open(options["output"], "w") as f:
+            f.write(news)
+    else:
+        print(news)
 
 
 if __name__ == "__main__":
